@@ -6,6 +6,9 @@ on:
     tags:
       - 'v0.10.0-arm64'
 
+permissions:
+  contents: write  # ← ini WAJIB kalau mau upload ke Release
+
 jobs:
   build:
     runs-on: ubuntu-latest
