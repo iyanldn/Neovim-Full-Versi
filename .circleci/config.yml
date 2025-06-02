@@ -2,8 +2,8 @@ version: 2.1
 
 jobs:
   build-neovim-arm64:
-    docker:
-      - image: ubuntu:22.04
+    machine:
+      image: ubuntu-2204:current
     environment:
       DEBIAN_FRONTEND: noninteractive
 
@@ -13,31 +13,31 @@ jobs:
       - run:
           name: 🔁 Ganti Mirror APT (anti 403)
           command: |
-            sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirror.kku.ac.th/ubuntu|g' /etc/apt/sources.list
-            sed -i 's|http://security.ubuntu.com/ubuntu|http://mirror.kku.ac.th/ubuntu|g' /etc/apt/sources.list
-            apt-get update || true
+            sudo sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirror.kku.ac.th/ubuntu|g' /etc/apt/sources.list
+            sudo sed -i 's|http://security.ubuntu.com/ubuntu|http://mirror.kku.ac.th/ubuntu|g' /etc/apt/sources.list
+            sudo apt-get update || true
 
       - run:
           name: 🧰 Install Dependencies
           command: |
-            apt-get update && apt-get install -y \
+            sudo apt-get update && sudo apt-get install -y \
               git curl wget unzip tar gzip ca-certificates \
               build-essential ninja-build gettext cmake \
               libtool libtool-bin autoconf automake pkg-config \
-              qemu-user-static binfmt-support docker.io jq
+              qemu-user-static binfmt-support jq
 
       - run:
           name: 🐳 Enable QEMU Emulation + Docker Buildx
           command: |
-            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-            docker buildx create --use || true
+            sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+            sudo docker buildx create --use || true
 
       - run:
           name: 🛠️ Build Neovim ARM64 v0.10.0
           command: |
-            mkdir -p /tmp/output
-            docker run --rm --platform linux/arm64 \
-              -v $(pwd)/output:/build \
+            mkdir -p output
+            sudo docker run --rm --platform linux/arm64 \
+              -v $PWD/output:/build \
               ubuntu:22.04 bash -c '
                 set -e
                 apt update &&
@@ -58,8 +58,8 @@ jobs:
       - run:
           name: ✅ Test Neovim Binary (ARM64)
           command: |
-            docker run --rm --platform linux/arm64 \
-              -v $(pwd)/output/nvim-arm64:/nvim ubuntu:22.04 \
+            sudo docker run --rm --platform linux/arm64 \
+              -v $PWD/output/nvim-arm64:/nvim ubuntu:22.04 \
               bash -c '/nvim/bin/nvim --version || echo "❌ Neovim gagal jalan!"'
 
       - run:
@@ -79,21 +79,27 @@ jobs:
       - run:
           name: 🚀 Upload ke GitHub Release
           command: |
-            apt-get install -y git curl jq
-            export TAG="v0.10.0-arm64"
-            export FILE="nvim-arm64.tar.gz"
-            export FILE_SHA="sha256.txt"
-            export GH_REPO="iyanldn/Ubuntu-V24.04"
-            export RELEASE_NAME="Neovim ARM64 v0.10.0"
-            export BODY="✅ Built via CircleCI on $(date +%Y-%m-%d)\n🔒 SHA256:\n$(cat output/sha256.txt)"
+            sudo apt-get install -y git curl jq
+            TAG="v0.10.0-arm64"
+            FILE="nvim-arm64.tar.gz"
+            FILE_SHA="sha256.txt"
+            GH_REPO="iyanldn/Ubuntu-V24.04"
+            RELEASE_NAME="Neovim ARM64 v0.10.0"
+            BODY="✅ Built via CircleCI on $(date +%Y-%m-%d)\n🔒 SHA256:\n$(cat output/sha256.txt)"
 
             cd output
 
+            # Validasi file
+            test -f "$FILE" || (echo "❌ File $FILE tidak ditemukan"; exit 1)
+            test -f "$FILE_SHA" || (echo "❌ File $FILE_SHA tidak ditemukan"; exit 1)
+
+            # Push tag (jika belum)
             git config --global user.email "ci@circleci"
             git config --global user.name "circleci-bot"
             git tag "$TAG" || true
-            git push "https://${GH_TOKEN}@github.com/${GH_REPO}.git" "$TAG" || true
+            git push --tags "https://${GH_TOKEN}@github.com/${GH_REPO}.git" || true
 
+            # Create GitHub Release
             curl -s -X POST \
               -H "Authorization: token ${GH_TOKEN}" \
               -H "Content-Type: application/json" \
@@ -103,6 +109,7 @@ jobs:
             RELEASE_ID=$(curl -s -H "Authorization: token ${GH_TOKEN}" \
               https://api.github.com/repos/${GH_REPO}/releases/tags/$TAG | jq -r .id)
 
+            # Upload assets
             curl -s -X POST \
               -H "Authorization: token ${GH_TOKEN}" \
               -H "Content-Type: application/gzip" \
