@@ -1,0 +1,57 @@
+name: Build Neovim ARM64 v0.10.0
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v0.10.0-arm64'
+
+permissions:
+  contents: write
+
+jobs:
+  build-nvim:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for ARM64
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Neovim in Docker
+        run: |
+          docker build --platform linux/arm64 -t nvim-builder .
+
+      - name: Copy Output
+        run: |
+          docker create --name extract nvim-builder
+          docker cp extract:/nvim-arm64.tar.gz .
+          docker cp extract:/sha256.txt .
+          docker rm extract
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvim-arm64
+          path: |
+            nvim-arm64.tar.gz
+            sha256.txt
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v0.10.0-arm64
+          name: Neovim ARM64 v0.10.0 (Stable)
+          generate_release_notes: true
+          files: |
+            nvim-arm64.tar.gz
+            sha256.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
