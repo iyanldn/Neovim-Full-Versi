@@ -1,10 +1,14 @@
-name: Build Neovim ARM64 v0.12.2
+name: Build Neovim ARM64 v0.12.1
 
 on:
-  workflow_dispatch:
   push:
+    branches: [main, master]
+    paths:
+      - "Dockerfile"
+      - ".github/workflows/**"
     tags:
-      - 'v0.12.2-arm64'
+      - "v0.12.1-arm64"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -46,8 +50,8 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v0.12.2-arm64
-          name: Neovim ARM64 v0.12.2 (Stable)
+          tag_name: v0.12.1-arm64
+          name: Neovim ARM64 v0.12.1 (Stable)
           generate_release_notes: true
           files: |
             nvim-arm64.tar.gz

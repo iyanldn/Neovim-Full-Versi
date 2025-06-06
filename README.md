@@ -1,2 +1,3 @@
-# Neovim Custom Config (v0.12.2)
-Fully automated setup with Docker and GitHub Actions.
+# Neovim v0.12.1 ARM64
+
+Custom build with Docker and GitHub Actions automation.
