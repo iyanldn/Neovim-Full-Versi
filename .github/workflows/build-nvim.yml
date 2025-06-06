@@ -2,7 +2,9 @@ name: Build Neovim ARM64 v0.12.1
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
     paths:
       - "Dockerfile"
       - ".github/workflows/**"
@@ -14,8 +16,9 @@ permissions:
   contents: write
 
 jobs:
-  build-nvim:
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -28,16 +31,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Neovim in Docker
+      - name: Build Neovim (v0.12.1 ARM64)
         run: |
-          docker build --platform linux/arm64 -t nvim-builder .
-
-      - name: Copy Output
-        run: |
-          docker create --name extract nvim-builder
-          docker cp extract:/nvim-arm64.tar.gz .
-          docker cp extract:/sha256.txt .
-          docker rm extract
+          docker buildx build \
+            --platform linux/arm64 \
+            --output type=local,dest=. \
+            --build-arg NVIM_VERSION=v0.12.1 \
+            .
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
