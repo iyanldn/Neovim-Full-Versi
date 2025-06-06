@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-ARG NVIM_VERSION=v0.12.2
+ARG NVIM_VERSION=v0.12.1
 
 # Install dependencies
 RUN apt update && apt install -y \
