@@ -1,10 +1,10 @@
-name: Build Neovim ARM64 v0.10.0
+name: Build Neovim ARM64 v0.12.2
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - 'v0.10.0-arm64'
+      - 'v0.12.2-arm64'
 
 permissions:
   contents: write
@@ -12,7 +12,6 @@ permissions:
 jobs:
   build-nvim:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -47,8 +46,8 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v0.10.0-arm64
-          name: Neovim ARM64 v0.10.0 (Stable)
+          tag_name: v0.12.2-arm64
+          name: Neovim ARM64 v0.12.2 (Stable)
           generate_release_notes: true
           files: |
             nvim-arm64.tar.gz
