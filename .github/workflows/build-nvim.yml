@@ -7,7 +7,7 @@ on:
       - "Dockerfile"
       - ".github/workflows/**"
     tags:
-      - "v0.12.1-arm64"
+      - "v0.12.2-arm64"
   workflow_dispatch:
 
 permissions:
