@@ -6,8 +6,8 @@ RUN apt update && apt install -y \
   libtool libtool-bin autoconf automake pkg-config \
   python3-pip nodejs npm
 
-# Clone Neovim (hardcoded to v0.12.2)
-RUN git clone --depth 1 --branch v0.12.2 https://github.com/neovim/neovim.git /neovim
+# Clone Neovim (hardcoded ke v0.11.4)
+RUN git clone --depth 1 --branch v0.11.4 https://github.com/neovim/neovim.git /neovim
 
 # Build & Install Neovim
 RUN cd /neovim && make CMAKE_BUILD_TYPE=Release \
