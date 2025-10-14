@@ -1,24 +1,37 @@
-name: Build Neovim ARM64 (Manual / Auto Tag)
+name: Auto Build Neovim ARM64 (Latest Release)
 
 on:
-  workflow_dispatch:  # cuma jalan manual dari tab Actions
+  schedule:
+    - cron: '0 0 * * *'  # tiap tengah malam UTC (jam 7 pagi WIB)
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 env:
-  NEOVIM_VERSION: v0.11.4
   TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
 jobs:
-  build:
+  build-latest:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+
+      - name: Get Latest Neovim Version
+        id: latest
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | jq -r .tag_name)
+          echo "LATEST=$LATEST" >> $GITHUB_ENV
+          echo "Latest Neovim version: $LATEST"
+
+      - name: Check if tag already exists
+        run: |
+          if git rev-parse "$LATEST-arm64" >/dev/null 2>&1; then
+            echo "✅ Sudah ada tag $LATEST-arm64, skip build."
+            exit 0
+          fi
 
       - name: Set up QEMU for ARM64
         uses: docker/setup-qemu-action@v3
@@ -28,16 +41,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Cache ccache
-        uses: actions/cache@v3
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-nvim-${{ hashFiles('Dockerfile') }}
-
-      - name: Build Neovim (${{ env.NEOVIM_VERSION }} ARM64)
+      - name: Build Neovim (${{ env.LATEST }} ARM64)
         run: |
           docker buildx build \
             --platform linux/arm64 \
+            --build-arg NEOVIM_VERSION=$LATEST \
             --build-arg MAKEFLAGS="-j2" \
             --output type=local,dest=. \
             .
@@ -50,19 +58,18 @@ jobs:
             nvim-arm64.tar.gz
             sha256.txt
 
-      - name: Create & Push Tag (Auto)
+      - name: Create & Push Tag
         run: |
-          TAG="${NEOVIM_VERSION}-arm64"
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git tag -a "$TAG" -m "Neovim ARM64 $TAG (Auto Build)"
-          git push origin "$TAG"
+          git tag -a "$LATEST-arm64" -m "Neovim ARM64 $LATEST (Auto Build)"
+          git push origin "$LATEST-arm64"
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.NEOVIM_VERSION }}-arm64
-          name: Neovim ARM64 ${{ env.NEOVIM_VERSION }} (Stable)
+          tag_name: ${{ env.LATEST }}-arm64
+          name: Neovim ARM64 ${{ env.LATEST }} (Auto Build)
           generate_release_notes: true
           files: |
             nvim-arm64.tar.gz
@@ -70,11 +77,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Telegram Notification (Optional)
+      - name: Telegram Notification
         if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
         run: |
-          MSG="✅ *Neovim ARM64 $NEOVIM_VERSION Build Selesai!*%0A
-          📦 Artifact: [nvim-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/tag/${NEOVIM_VERSION}-arm64)%0A
+          MSG="✅ *Neovim ARM64 $LATEST Build Selesai!*%0A
+          📦 [Lihat Release](https://github.com/${{ github.repository }}/releases/tag/${LATEST}-arm64)%0A
           🕒 Workflow: [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
