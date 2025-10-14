@@ -4,13 +4,17 @@ FROM ubuntu:22.04
 RUN apt update && apt install -y \
   git curl ninja-build gettext cmake unzip build-essential \
   libtool libtool-bin autoconf automake pkg-config \
-  python3-pip nodejs npm
+  python3-pip nodejs npm ccache
 
-# Clone Neovim (hardcoded ke v0.11.4)
-RUN git clone --depth 1 --branch v0.11.4 https://github.com/neovim/neovim.git /neovim
+ENV CCACHE_DIR=/root/.ccache
+ENV PATH="/usr/lib/ccache:$PATH"
+
+# Clone Neovim (set version via build arg)
+ARG NEOVIM_VERSION=v0.11.4
+RUN git clone --depth 1 --branch ${NEOVIM_VERSION} https://github.com/neovim/neovim.git /neovim
 
 # Build & Install Neovim
-RUN cd /neovim && make CMAKE_BUILD_TYPE=Release \
+RUN cd /neovim && make -j2 CMAKE_BUILD_TYPE=Release \
   CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/nvim-arm64" \
   && make install
 
