@@ -1,7 +1,7 @@
 name: Manual Build Neovim ARM64 (Auto Tag + Release)
 
 on:
-  workflow_dispatch:  # cuma jalan kalau lo klik "Run workflow" manual
+  workflow_dispatch:  # jalan manual (Run workflow)
 
 permissions:
   contents: write
@@ -9,6 +9,7 @@ permissions:
 jobs:
   build-latest:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -18,13 +19,12 @@ jobs:
         run: |
           LATEST=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | jq -r .tag_name)
           echo "LATEST=$LATEST" >> $GITHUB_ENV
-          echo "Latest Neovim version: $LATEST"
+          echo "🔍 Latest Neovim version: $LATEST"
 
-      - name: Check if tag already exists
+      - name: Check if tag already exists (local)
         run: |
           if git rev-parse "$LATEST-arm64" >/dev/null 2>&1; then
-            echo "✅ Sudah ada tag $LATEST-arm64, skip build."
-            exit 0
+            echo "✅ Tag $LATEST-arm64 sudah ada (local), lanjut build ulang."
           fi
 
       - name: Set up QEMU for ARM64
@@ -52,11 +52,15 @@ jobs:
             nvim-arm64.tar.gz
             sha256.txt
 
-      - name: Create & Push Tag
+      - name: Create & Push Tag (Force Replace if Exists)
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git tag -a "$LATEST-arm64" -m "Neovim ARM64 $LATEST (Auto Build)"
+          if git ls-remote --tags origin | grep -q "$LATEST-arm64"; then
+            echo "⚠️ Tag $LATEST-arm64 udah ada, hapus dulu dari remote..."
+            git push --delete origin "$LATEST-arm64" || true
+          fi
+          git tag -fa "$LATEST-arm64" -m "Neovim ARM64 $LATEST (Auto Build)"
           git push origin "$LATEST-arm64"
 
       - name: Upload to GitHub Release
@@ -65,6 +69,7 @@ jobs:
           tag_name: ${{ env.LATEST }}-arm64
           name: Neovim ARM64 ${{ env.LATEST }} (Auto Build)
           generate_release_notes: true
+          overwrite: true       # ✅ ganti release lama kalau udah ada
           files: |
             nvim-arm64.tar.gz
             sha256.txt
