@@ -1,16 +1,10 @@
-name: Auto Build Neovim ARM64 (Latest Release)
+name: Manual Build Neovim ARM64 (Auto Tag + Release)
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # tiap tengah malam UTC (jam 7 pagi WIB)
-  workflow_dispatch:
+  workflow_dispatch:  # cuma jalan kalau lo klik "Run workflow" manual
 
 permissions:
   contents: write
-
-env:
-  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
 jobs:
   build-latest:
@@ -76,14 +70,3 @@ jobs:
             sha256.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Telegram Notification
-        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
-        run: |
-          MSG="✅ *Neovim ARM64 $LATEST Build Selesai!*%0A
-          📦 [Lihat Release](https://github.com/${{ github.repository }}/releases/tag/${LATEST}-arm64)%0A
-          🕒 Workflow: [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
-            -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d parse_mode=Markdown \
-            -d text="$MSG"
