@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 RUN apt update && apt install -y \
   git curl ninja-build gettext cmake unzip build-essential \
   libtool libtool-bin autoconf automake pkg-config \
-  python3-pip nodejs npm ccache
+  python3-pip nodejs npm ccache jq
 
 ENV CCACHE_DIR=/root/.ccache
 ENV PATH="/usr/lib/ccache:$PATH"
