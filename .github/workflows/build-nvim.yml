@@ -66,12 +66,11 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.LATEST }}-arm64
-          name: Neovim ARM64 ${{ env.LATEST }} (Auto Build)
-          generate_release_notes: true
-          overwrite: true       # ✅ ganti release lama kalau udah ada
-          files: |
-            nvim-arm64.tar.gz
-            sha256.txt
+         tag_name: ${{ env.LATEST }}-arm64
+         name: Neovim ARM64 ${{ env.LATEST }} (Auto Build)
+         generate_release_notes: true
+         files: |
+           nvim-arm64.tar.gz
+           sha256.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
