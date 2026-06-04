@@ -1,7 +1,7 @@
 name: Manual Build Neovim ARM64 (Auto Tag + Release)
 
 on:
-  workflow_dispatch:  # jalan manual (Run workflow)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,19 +15,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get Latest Neovim Version
-        id: latest
         run: |
           LATEST=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | jq -r .tag_name)
-          echo "LATEST=$LATEST" >> $GITHUB_ENV
-          echo "🔍 Latest Neovim version: $LATEST"
 
-      - name: Check if tag already exists (local)
-        run: |
-          if git rev-parse "$LATEST-arm64" >/dev/null 2>&1; then
-            echo "✅ Tag $LATEST-arm64 sudah ada (local), lanjut build ulang."
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "Failed to fetch latest Neovim release"
+            exit 1
           fi
 
-      - name: Set up QEMU for ARM64
+          echo "LATEST=$LATEST" >> $GITHUB_ENV
+          echo "Latest Neovim version: $LATEST"
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
@@ -35,6 +34,48 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build Neovim ARM64
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            --build-arg NEOVIM_VERSION=${LATEST} \
+            --build-arg MAKEFLAGS="-j2" \
+            --output type=local,dest=. \
+            .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvim-arm64-${{ env.LATEST }}
+          path: |
+            nvim-arm64.tar.gz
+            sha256.txt
+
+      - name: Create Tag
+        run: |
+          TAG="${LATEST}-arm64"
+
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            git push --delete origin "${TAG}" || true
+          fi
+
+          git tag -fa "${TAG}" -m "Neovim ARM64 ${LATEST}"
+          git push origin "${TAG}" --force
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.LATEST }}-arm64
+          name: Neovim ARM64 ${{ env.LATEST }}
+          generate_release_notes: true
+          files: |
+            nvim-arm64.tar.gz
+            sha256.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Neovim (${{ env.LATEST }} ARM64)
         run: |
           docker buildx build \
