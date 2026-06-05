@@ -39,17 +39,21 @@ jobs:
           docker buildx build \
             --platform linux/arm64 \
             --build-arg NEOVIM_VERSION=${LATEST} \
-            --build-arg MAKEFLAGS="-j2" \
-            --output type=local,dest=. \
+            --output type=local,dest=./out \
             .
+
+      - name: Show Build Output
+        run: |
+          ls -lah out || true
+          du -sh out || true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: nvim-arm64-${{ env.LATEST }}
           path: |
-            nvim-arm64.tar.gz
-            sha256.txt
+            out/nvim-arm64.tar.gz
+            out/sha256.txt
 
       - name: Create Tag
         run: |
@@ -72,46 +76,7 @@ jobs:
           name: Neovim ARM64 ${{ env.LATEST }}
           generate_release_notes: true
           files: |
-            nvim-arm64.tar.gz
-            sha256.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Neovim (${{ env.LATEST }} ARM64)
-        run: |
-          docker buildx build \
-            --platform linux/arm64 \
-            --build-arg NEOVIM_VERSION=$LATEST \
-            --build-arg MAKEFLAGS="-j2" \
-            --output type=local,dest=. \
-            .
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nvim-arm64
-          path: |
-            nvim-arm64.tar.gz
-            sha256.txt
-
-      - name: Create & Push Tag (Force Replace if Exists)
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          if git ls-remote --tags origin | grep -q "$LATEST-arm64"; then
-            echo "⚠️ Tag $LATEST-arm64 udah ada, hapus dulu dari remote..."
-            git push --delete origin "$LATEST-arm64" || true
-          fi
-          git tag -fa "$LATEST-arm64" -m "Neovim ARM64 $LATEST (Auto Build)"
-          git push origin "$LATEST-arm64"
-
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-         tag_name: ${{ env.LATEST }}-arm64
-         name: Neovim ARM64 ${{ env.LATEST }} (Auto Build)
-         generate_release_notes: true
-         files: |
-           nvim-arm64.tar.gz
-           sha256.txt
+            out/nvim-arm64.tar.gz
+            out/sha256.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
