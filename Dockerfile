@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -41,8 +41,18 @@ RUN make \
 
 RUN make install
 
+RUN echo "=== INSTALL SIZE ===" && \
+    du -sh /nvim-arm64
+
 WORKDIR /
 
 RUN tar -czf nvim-arm64.tar.gz nvim-arm64
 
+RUN echo "=== TAR SIZE ===" && \
+    ls -lh nvim-arm64.tar.gz
+
 RUN sha256sum nvim-arm64.tar.gz > sha256.txt
+
+RUN mkdir /release && \
+    cp nvim-arm64.tar.gz /release/ && \
+    cp sha256.txt /release/
