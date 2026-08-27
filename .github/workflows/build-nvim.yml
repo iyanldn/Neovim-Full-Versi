@@ -1,9 +1,8 @@
 name: Build Neovim ARM64 (Debian 14 Forky)
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 3 * * *"   # jalan tiap hari jam 3 pagi UTC
+  repository_dispatch:
+    types: [neovim-release]   # workflow jalan kalau ada event dispatch dari upstream
 
 permissions:
   contents: write
@@ -65,3 +64,12 @@ jobs:
             out/sha256.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Docker Image (optional)
+        run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker buildx build \
+            --platform linux/arm64 \
+            --build-arg NEOVIM_VERSION=${LATEST} \
+            -t yourdockerhubuser/nvim-arm64:${LATEST} \
+            --push .
