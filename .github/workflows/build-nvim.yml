@@ -2,7 +2,8 @@ name: Build Neovim ARM64 (Debian 14 Forky)
 
 on:
   repository_dispatch:
-    types: [neovim-release]   # workflow jalan kalau ada event dispatch dari upstream
+    types: [neovim-release]   # jalan kalau ada event dispatch dari upstream
+  workflow_dispatch:          # ada tombol manual run di UI
 
 permissions:
   contents: write
