@@ -1,4 +1,5 @@
-FROM debian:testing   # Debian 14 Forky (latest testing tag)
+# Debian 14 stable (Forky)
+FROM debian:14
 
 ENV DEBIAN_FRONTEND=noninteractive
 
