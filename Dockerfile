@@ -20,6 +20,10 @@ RUN apt update && apt install -y \
     ccache \
     jq \
     ca-certificates \
+ && curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
+ && apt-get install -y nodejs \
+ && apt-get clean \
+ && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 
 ENV CCACHE_DIR=/root/.ccache
