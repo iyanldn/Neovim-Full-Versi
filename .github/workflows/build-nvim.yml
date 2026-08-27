@@ -1,13 +1,15 @@
-name: Manual Build Neovim ARM64 (Auto Tag + Release)
+name: Build Neovim ARM64 (Debian 14 Forky)
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"   # jalan tiap hari jam 3 pagi UTC
 
 permissions:
   contents: write
 
 jobs:
-  build-latest:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,12 +19,6 @@ jobs:
       - name: Get Latest Neovim Version
         run: |
           LATEST=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | jq -r .tag_name)
-
-          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
-            echo "Failed to fetch latest Neovim release"
-            exit 1
-          fi
-
           echo "LATEST=$LATEST" >> $GITHUB_ENV
           echo "Latest Neovim version: $LATEST"
 
@@ -42,11 +38,6 @@ jobs:
             --output type=local,dest=./out \
             .
 
-      - name: Show Build Output
-        run: |
-          ls -lah out || true
-          du -sh out || true
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -58,14 +49,8 @@ jobs:
       - name: Create Tag
         run: |
           TAG="${LATEST}-arm64"
-
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-
-          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
-            git push --delete origin "${TAG}" || true
-          fi
-
           git tag -fa "${TAG}" -m "Neovim ARM64 ${LATEST}"
           git push origin "${TAG}" --force
 
