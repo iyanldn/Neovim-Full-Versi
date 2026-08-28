@@ -2,8 +2,11 @@ name: Build Neovim ARM64 (Debian 14 Forky)
 
 on:
   workflow_dispatch:
+
   repository_dispatch:
-    types: [neovim-release]
+    types:
+      - neovim-release
+
   schedule:
     - cron: "0 3 * * 0"
 
@@ -16,33 +19,33 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Get Latest Neovim Version
         run: |
-          LATEST=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | jq -r .tag_name)
-          echo "LATEST=$LATEST" >> $GITHUB_ENV
+          LATEST=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest | jq -r '.tag_name')
+          echo "LATEST=$LATEST" >> "$GITHUB_ENV"
           echo "Latest Neovim version: $LATEST"
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Neovim ARM64
         run: |
           docker buildx build \
             --platform linux/arm64 \
-            --build-arg NEOVIM_VERSION=${{ env.LATEST }} \
+            --build-arg NEOVIM_VERSION="${{ env.LATEST }}" \
             --output type=local,dest=./out \
             --progress=plain \
             .
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: nvim-arm64-${{ env.LATEST }}
           path: |
@@ -53,13 +56,15 @@ jobs:
       - name: Create Tag
         run: |
           TAG="${LATEST}-arm64"
+
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -fa "${TAG}" -m "Neovim ARM64 ${LATEST}"
-          git push origin "${TAG}" --force
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -fa "$TAG" -m "Neovim ARM64 ${LATEST}"
+          git push origin "$TAG" --force
 
       - name: Create Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.LATEST }}-arm64
           name: Neovim ARM64 ${{ env.LATEST }}
@@ -70,15 +75,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Opsional - ubah jadi `if: true` kalau mau publish ke Docker Hub
-      - name: Publish Docker Image (optional)
+      # Optional: Publish to Docker Hub
+      - name: Publish Docker Image
         if: false
         run: |
-          echo "\( {{ secrets.DOCKER_PASSWORD }}" | docker login -u " \){{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+            -u "${{ secrets.DOCKER_USERNAME }}" \
+            --password-stdin
+
           docker buildx build \
             --platform linux/arm64 \
-            --build-arg NEOVIM_VERSION=${{ env.LATEST }} \
-            -t \( {{ secrets.DOCKER_USERNAME }}/nvim-arm64: \){{ env.LATEST }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/nvim-arm64:latest \
+            --build-arg NEOVIM_VERSION="${{ env.LATEST }}" \
+            -t "${{ secrets.DOCKER_USERNAME }}/nvim-arm64:${{ env.LATEST }}" \
+            -t "${{ secrets.DOCKER_USERNAME }}/nvim-arm64:latest" \
             --push \
             .
