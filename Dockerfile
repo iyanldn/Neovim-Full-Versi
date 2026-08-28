@@ -36,7 +36,7 @@ ARG NEOVIM_VERSION
 
 RUN git clone \
     --depth 1 \
-    --branch ${NEOVIM_VERSION} \
+    --branch "${NEOVIM_VERSION}" \
     https://github.com/neovim/neovim.git \
     /neovim
 
