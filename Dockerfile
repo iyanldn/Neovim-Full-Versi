@@ -1,9 +1,11 @@
 # Debian 14 stable (Forky)
-FROM debian:forky
+FROM debian:forky-slim
 
 # Disable systemd check
-ENV container docker
+ENV container=docker
 ENV DEBIAN_FRONTEND=noninteractive
+ENV CCACHE_DIR=/root/.ccache
+ENV PATH=/usr/lib/ccache:${PATH}
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,10 +17,6 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
-
-# Ccache config
-ENV CCACHE_DIR=/root/.ccache
-ENV PATH="/usr/lib/ccache:${PATH}"
 
 # Build Neovim
 ARG NEOVIM_VERSION
