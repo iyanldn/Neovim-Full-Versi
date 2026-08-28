@@ -1,5 +1,5 @@
 # Debian 14 stable (Forky)
-FROM debian:forky-slim
+FROM debian:forky
 
 # Disable systemd check
 ENV container=docker
