@@ -1,10 +1,10 @@
 name: Build Neovim ARM64 (Debian 14 Forky)
 
 on:
-  workflow_dispatch:          # manual
-  repository_dispatch:        # auto dari upstream
+  workflow_dispatch:
+  repository_dispatch:
     types: [neovim-release]
-  schedule:                   # setiap Minggu jam 03:00 UTC
+  schedule:
     - cron: "0 3 * * 0"
 
 permissions:
@@ -19,7 +19,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get Latest Neovim Version
-        id: version
         run: |
           LATEST=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | jq -r .tag_name)
           echo "LATEST=$LATEST" >> $GITHUB_ENV
@@ -32,11 +31,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          # Paksa pakai Node 22 supaya warning "Node.js 20 is deprecated" hilang
-          # (opsional, tapi bagus)
-          driver-opts: |
-            image=moby/buildkit:buildx-stable-1
 
       - name: Build Neovim ARM64
         run: |
@@ -76,9 +70,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Opsional: publish ke Docker Hub
+      # Opsional - aktifkan kalau mau publish ke Docker Hub
       - name: Publish Docker Image (optional)
-        if: false   # ganti jadi true kalau mau aktifkan
+        if: false
         run: |
           echo "\( {{ secrets.DOCKER_PASSWORD }}" | docker login -u " \){{ secrets.DOCKER_USERNAME }}" --password-stdin
           docker buildx build \
