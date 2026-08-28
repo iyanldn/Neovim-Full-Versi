@@ -70,7 +70,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Opsional - aktifkan kalau mau publish ke Docker Hub
+      # Opsional - ubah jadi `if: true` kalau mau publish ke Docker Hub
       - name: Publish Docker Image (optional)
         if: false
         run: |
