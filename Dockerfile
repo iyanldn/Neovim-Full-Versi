@@ -1,7 +1,7 @@
 # ========================
 # Stage 1: Builder
 # ========================
-FROM debian:forky AS builder
+FROM debian:forky-slim AS builder
 
 ENV container=docker
 ENV DEBIAN_FRONTEND=noninteractive
