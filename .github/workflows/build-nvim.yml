@@ -42,7 +42,7 @@ jobs:
             .
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nvim-arm64-${{ env.LATEST }}
           path: |
@@ -59,7 +59,7 @@ jobs:
           git push origin "${TAG}" --force
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.LATEST }}-arm64
           name: Neovim ARM64 ${{ env.LATEST }}
